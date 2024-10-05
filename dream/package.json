@@ -9,10 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "mapbox-gl": "^3.7.0",
     "next": "14.2.14",
-    "playwright": "^1.47.2",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "playwright": "^1.47.2",
+    "react-map-gl": "^7.1.7"
   },
   "devDependencies": {
     "eslint": "^8",
