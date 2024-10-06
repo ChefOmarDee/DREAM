@@ -3,7 +3,7 @@ const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 
 async function CanUseWind(regtext) {
-    const genAI = new GoogleGenerativeAI("AIzaSyB3jRNyygo-wgH9hiP3WPla3HFBqUJKGxE");
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = "Answer with a yes or a no, does the following text ban utility scale wind energy?: " + regtext;
