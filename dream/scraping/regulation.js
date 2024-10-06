@@ -8,7 +8,7 @@ async function WindAllowed(county) {
     let browser = null;
     try {
         console.log("starting");
-        browser = await playwright.chromium.launch({ headless: false });
+        browser = await playwright.chromium.launch({ headless: true });
         const context = await browser.newContext();
         const page = await context.newPage();
         const timeout = 1800000;
