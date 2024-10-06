@@ -6,7 +6,7 @@ async function AddCounty(countyname, zipcodes, permitted) {
 
 	try {
 		const existingCounty = await Counties.findOne({ countyname });
-		console.log(existingCounty);
+		
 		if (existingCounty) {
 			console.log("already exists");
 			return;

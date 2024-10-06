@@ -49,7 +49,7 @@ const ZipcodeSchema = new mongoose.Schema(
         }
 
 	},
-	{ collection: "zipcodes" }
+	{ collection: "Zipcodes" }
 );
 
 export const ZipCode =
