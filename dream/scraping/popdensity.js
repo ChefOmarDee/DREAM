@@ -6,10 +6,10 @@ async function GetPopDensity(zipcode) {
     }
     let browser = null;
     try {
-        browser = await playwright.chromium.launch({ headless: true });
+        browser = await playwright.chromium.launch({ headless: false });
         const context = await browser.newContext();
         const page = await context.newPage();
-        const timeout = 1800000;
+        const timeout = 1000000;
         const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error("Operation timed out")), timeout)
         );
@@ -17,14 +17,19 @@ async function GetPopDensity(zipcode) {
         const typeText = async (selector, text, delay = 100) => {
             for (const letter of text) {
                 await page.type(selector, letter);
-                await page.waitForTimeout(delay); // Adjust delay between each letter
+                await page.waitForTimeout(delay);
             }
         };
 
         await page.goto("https://www.mapszipcode.com/");
         await page.waitForSelector('button[id="btnSearch"]', { state: 'visible' });
-        await page.waitForTimeout(1000);
-        await typeText('input[name="searchText"]', zipcode, 200); // Adjust delay as needed
+        await page.waitForTimeout(1500);
+
+        await page.evaluate(() => {
+            window.scrollBy(0, 500);
+        });
+
+        await typeText('input[name="searchText"]', zipcode, 100);
         await page.click('button[id="btnSearch"]');
         await page.waitForURL(`**/${zipcode}/`);
 
