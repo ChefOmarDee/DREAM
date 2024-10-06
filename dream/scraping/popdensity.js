@@ -1,6 +1,9 @@
 const playwright = require("playwright");
 
 async function GetPopDensity(zipcode) {
+    if (!zipcode) {
+        return
+    }
     let browser = null;
     try {
         browser = await playwright.chromium.launch({ headless: false });
