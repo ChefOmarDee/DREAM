@@ -10,26 +10,56 @@ export async function AddCounty(countyData) {
             throw new Error("Input must be an array of county objects");
         }
 
-        // Prepare the county documents
-        const countiesToInsert = countyData.map(county => {
+        let updatedCount = 0;
+        let insertedCount = 0;
+
+        for (const county of countyData) {
             if (!county.countyName || !county.state || !Array.isArray(county.zipCodes)) {
                 console.warn("Skipping invalid county object:", county);
-                return null;
+                continue;
             }
 
-            return {
-                countyname: county.countyName,
-                state: county.state,
-                permitted: county.isAllowed !== undefined ? county.isAllowed : true,
-                zipcodes: county.zipCodes
+            // Normalize the county name
+            const normalizedCountyName = county.countyName.toLowerCase().trim();
+
+            const filter = { 
+                countyname: normalizedCountyName,
+                state: county.state 
             };
-        }).filter(county => county !== null);
 
-        // Use insertMany to insert all valid counties in one operation
-        const result = await Counties.insertMany(countiesToInsert);
+            const update = {
+                $set: {
+                    permitted: county.isAllowed !== undefined ? county.isAllowed : true,
+                    state: county.state, // Ensure state is always set/updated
+                },
+                $addToSet: { zipcodes: { $each: county.zipCodes } }
+            };
 
-        console.log(`Successfully added ${result.length} counties`);
-        return result;
+            const options = { upsert: true, new: true };
+
+            try {
+                const result = await Counties.findOneAndUpdate(filter, update, options);
+
+                if (result.upserted) {
+                    insertedCount++;
+                } else {
+                    updatedCount++;
+                }
+            } catch (err) {
+                if (err.code === 11000) {
+                    // Duplicate key error
+                    console.warn(`Duplicate county found: ${normalizedCountyName}, ${county.state}. Updating existing record.`);
+                    // Try to update without upsert
+                    await Counties.updateOne(filter, update);
+                    updatedCount++;
+                } else {
+                    throw err;
+                }
+            }
+        }
+
+        console.log(`Updated ${updatedCount} counties and inserted ${insertedCount} new counties`);
+        return { updatedCount, insertedCount };
     } catch (error) {
         console.error("Error in AddCounty:", error);
         throw error;
