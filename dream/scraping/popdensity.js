@@ -1,9 +1,12 @@
 const playwright = require("playwright");
 
 async function GetPopDensity(zipcode) {
+    if (!zipcode) {
+        return
+    }
     let browser = null;
     try {
-        browser = await playwright.chromium.launch({ headless: false });
+        browser = await playwright.chromium.launch({ headless: true });
         const context = await browser.newContext();
         const page = await context.newPage();
         const timeout = 1800000;
