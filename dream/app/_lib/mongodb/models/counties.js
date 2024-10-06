@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 
 const CountySchema = new mongoose.Schema(
-	{
+    {
         countyname: {
             type: String,
             required: true,
             unique: true
         },
-		zipcodes: {
+        zipcodes: {
             type: [String],
             required: false,
             unique: false
@@ -16,11 +16,15 @@ const CountySchema = new mongoose.Schema(
             type: Boolean,
             required: false,
             unique: false
+        },
+        state:{
+            type: String,
+            required: false,
+            unique: false
         }
-		
     },
-	{ collection: "Counties" }   
+    { collection: "Counties" }
 );
 
-export const Counties =
-	mongoose.models.County || mongoose.model("County", CountySchema);
+export const Counties = mongoose.models.County || mongoose.model("County", CountySchema);
+

@@ -5,6 +5,7 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 export async function ConnectToDatabase() {
 	try {
+		console.log(process.env.MONGODB_URI)
 		await mongoose.connect(process.env.MONGODB_URI);
 		console.log("Connected to MongoDB with Mongoose");
 	} catch (error) {
