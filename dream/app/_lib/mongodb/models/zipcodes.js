@@ -46,11 +46,20 @@ const ZipcodeSchema = new mongoose.Schema(
             type: [[Number]],
             required: false,
             unique: false
+        },
+        state:{
+            type:String,
+            required: false,
+            unique: false
+        },
+        permitted:{
+            type:Boolean,
+            required: false,
+            unique: false
         }
 
 	},
 	{ collection: "Zipcodes" }
 );
 
-export const ZipCode =
-	mongoose.models.Zipcode || mongoose.model("Zipcode", ZipcodeSchema);
+export const ZipCode = mongoose.models.Zipcode || mongoose.model("Zipcode", ZipcodeSchema);	
