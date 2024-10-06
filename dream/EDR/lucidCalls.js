@@ -179,7 +179,7 @@ function getAveragePrecipitation(startDate, endDate, latitude, longitude) {
 
 
 
-async function getEnvData(startDate, endDate, latitude, longitude) {
+export async function getEnvData(startDate, endDate, latitude, longitude) {
     const promises = [
         getAverageWindSpeed(startDate, endDate, latitude, longitude),
         getAverageWindGust(startDate, endDate, latitude, longitude),
