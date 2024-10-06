@@ -16,6 +16,11 @@ const CountySchema = new mongoose.Schema(
             type: Boolean,
             required: false,
             unique: false
+        },
+        state:{
+            type: String,
+            required: false,
+            unique: false
         }
     },
     { collection: "Counties" }

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { CSVToCountyObjects } from "@/app/_lib/scraping/zipcode";
 import { ScrapeCounties } from "@/app/_lib/scraping/county";
+import { AddCounty } from "@/app/_lib/mongodb/util/addcounty";
 
-// Function to fetch both scraped and CSV counties
 export async function GET(req) {
     try {
         // Fetch counties from CSV
@@ -11,41 +11,40 @@ export async function GET(req) {
         // Fetch counties from scraping Wikipedia
         const countyNamesFromScrape = await ScrapeCounties();
 
-        // Create a combined result for counties
         const disallowedStates = ['Kentucky', 'Florida', 'Vermont', 'Connecticut', 'Tennessee'];
         
         // Prepare scraped counties with state information
         const scrapedCounties = countyNamesFromScrape
             .filter(fullName => fullName.toLowerCase().includes("county"))
             .map(fullName => {
-                // No split; keep full name as is
-                const countyName = fullName.trim(); // Trim to clean whitespace
-                const state = countyName.split(', ')[1]; // Extract state from full name
+                const countyName = fullName.trim();
+                const state = countyName.split(', ')[1];
                 return {
-                    countyName: countyName, // Keep full name
-                    state: state.trim(), // Get state
-                    isAllowed: !disallowedStates.includes(state.trim()) // Check against disallowed states
+                    countyName: countyName,
+                    state: state.trim(),
+                    isAllowed: !disallowedStates.includes(state.trim()),
+                    zipCodes: [] // Add an empty array for zipCodes
                 };
             });
 
         // Prepare CSV counties with state information
         const csvCounties = countyObjectsFromCSV.counties.map(({ countyName, isAllowed, zipCodes }) => {
             return {
-                countyName: countyName.trim(), // Keep county name as is
-                state: countyName.split(', ')[1].trim(), // Extract state from county name
+                countyName: countyName.trim(),
+                state: countyName.split(', ')[1].trim(),
                 isAllowed,
                 zipCodes
             };
         });
 
-        // Merge scraped counties and CSV counties
-        const combinedCountyData = {
-            csvCounties,
-            scrapedCounties
-        };
+        // Combine all counties into a single array
+        const allCounties = [...csvCounties, ...scrapedCounties];
+
+        // Add counties to the database
+        await AddCounty(allCounties);
 
         // Return the combined data as JSON
-        return NextResponse.json({ combinedCountyData });
+        return NextResponse.json({ allCounties });
     } catch (error) {
         console.error("Error processing counties:", error);
         return NextResponse.json(
