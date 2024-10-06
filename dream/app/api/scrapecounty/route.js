@@ -3,6 +3,14 @@ import { CSVToCountyObjects } from "@/app/_lib/scraping/zipcode";
 import { ScrapeCounties } from "@/app/_lib/scraping/county";
 import { AddCounty } from "@/app/_lib/mongodb/util/addcounty";
 
+// Function to normalize county names
+function normalizeCountyName(name) {
+    return name.toLowerCase()
+               .replace(/\s+county$/i, '')
+               .replace(/\s+/g, ' ')
+               .trim();
+}
+
 export async function GET(req) {
     try {
         // Fetch counties from CSV
@@ -13,32 +21,50 @@ export async function GET(req) {
 
         const disallowedStates = ['Kentucky', 'Florida', 'Vermont', 'Connecticut', 'Tennessee'];
         
-        // Prepare scraped counties with state information
-        const scrapedCounties = countyNamesFromScrape
-            .filter(fullName => fullName.toLowerCase().includes("county"))
-            .map(fullName => {
-                const countyName = fullName.trim();
-                const state = countyName.split(', ')[1];
-                return {
-                    countyName: countyName,
-                    state: state.trim(),
-                    isAllowed: !disallowedStates.includes(state.trim()),
-                    zipCodes: [] // Add an empty array for zipCodes
-                };
-            });
+        // Create a map to store unique counties
+        const countyMap = new Map();
 
-        // Prepare CSV counties with state information
-        const csvCounties = countyObjectsFromCSV.counties.map(({ countyName, isAllowed, zipCodes }) => {
-            return {
-                countyName: countyName.trim(),
-                state: countyName.split(', ')[1].trim(),
-                isAllowed,
-                zipCodes
-            };
+        // Process CSV counties
+        countyObjectsFromCSV.counties.forEach(({ countyName, isAllowed, zipCodes }) => {
+            let [name, state] = countyName.split(',').map(s => s.trim());
+            name = normalizeCountyName(name);
+            const key = `${name},${state}`;
+            if (!countyMap.has(key)) {
+                countyMap.set(key, {
+                    countyName: name,
+                    state: state,
+                    isAllowed: !disallowedStates.includes(state),
+                    zipCodes: new Set(zipCodes)
+                });
+            } else {
+                // Merge zipcodes if the county already exists
+                zipCodes.forEach(zip => countyMap.get(key).zipCodes.add(zip));
+            }
         });
 
-        // Combine all counties into a single array
-        const allCounties = [...csvCounties, ...scrapedCounties];
+        // Process scraped counties
+        countyNamesFromScrape
+            .filter(fullName => fullName.toLowerCase().includes("county"))
+            .forEach(fullName => {
+                let [name, state] = fullName.split(',').map(s => s.trim());
+                name = normalizeCountyName(name);
+                const key = `${name},${state}`;
+                if (!countyMap.has(key)) {
+                    countyMap.set(key, {
+                        countyName: name,
+                        state: state,
+                        isAllowed: !disallowedStates.includes(state),
+                        zipCodes: new Set()
+                    });
+                }
+            });
+
+        // Convert the map to an array and sort zipCodes
+        const allCounties = Array.from(countyMap.values()).map(county => ({
+            ...county,
+            countyName: `${county.countyName} County`,
+            zipCodes: Array.from(county.zipCodes).sort((a, b) => a.localeCompare(b))
+        }));
 
         // Add counties to the database
         await AddCounty(allCounties);
