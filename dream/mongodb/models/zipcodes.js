@@ -46,6 +46,11 @@ const ZipcodeSchema = new mongoose.Schema(
             type: [[Number]],
             required: false,
             unique: false
+        },
+        score: {
+            type: [Number],
+            required: false,
+            unique: false
         }
 
 	},
