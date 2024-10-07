@@ -6,14 +6,12 @@ function normalize(value, min, max) {
   // Function to calculate score factor for windmill suitability
   function calculateScoreFactor({
     Wavg,   // Average wind speed
-    Gavg,   // Average wind gust
     Tfac,   // Temp. Factor
     Hfac,   // Humidity Factor
     Pfac   // Precipitation Factor
   }) {
     // Normalize each factor
     const normalizedWavg = normalize(Wavg, 3, 25); 
-    const normalizedGavg = normalize(Gavg, 18, 108); 
     const normalizedTfac = normalize(Tfac, -30, 50);
     const normalizedHfac = normalize(Hfac, 0, 100);
     const normalizedPfac = normalize(Pfac, 0, 2000);
@@ -28,10 +26,9 @@ function normalize(value, min, max) {
     // Calculate the final score using the given formula
     const score =
       0.45 * normalizedWavg +
-      0.15 * normalizedGavg +
       0.10 * normalizedPfac +
       0.20 * normalizedTfac +
-      0.10 * normalizedHfac;
+      0.25 * normalizedHfac;
     return score;
   }
   

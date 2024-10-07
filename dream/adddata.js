@@ -35,7 +35,7 @@ async function extractZipCodesAndCoordinates() {
             const zipcode = feature.properties.ZCTA5CE20;
 
             // Extract coordinates, assuming it's a MultiPolygon
-            const coordinates = feature.geometry.coordinates;
+            const coordinates = feature.geometry.coordinates[0];
 
             // Update MongoDB document if the zip code exists
             const result = await collection.updateOne(

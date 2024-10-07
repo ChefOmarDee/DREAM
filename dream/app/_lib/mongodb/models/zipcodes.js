@@ -45,6 +45,11 @@ const ZipcodeSchema = new mongoose.Schema(
         geojson: {
             type: [[Number]],
             required: false,
+            unique: false,
+        },
+        lucidscore: {
+            type: Number,
+            required: false,
             unique: false
         }
 
@@ -52,5 +57,4 @@ const ZipcodeSchema = new mongoose.Schema(
 	{ collection: "Zipcodes" }
 );
 
-export const ZipCode =
-	mongoose.models.Zipcode || mongoose.model("Zipcode", ZipcodeSchema);
+export const ZipCode = mongoose.models.Zipcode || mongoose.model("Zipcode", ZipcodeSchema);	
