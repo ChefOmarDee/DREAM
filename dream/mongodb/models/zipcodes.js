@@ -45,10 +45,20 @@ const ZipcodeSchema = new mongoose.Schema(
         geojson: {
             type: [[Number]],
             required: false,
-            unique: false,
+            unique: false
         },
-        lucidscore: {
-            type: Number,
+        state:{
+            type:String,
+            required: false,
+            unique: false
+        },
+        permitted:{
+            type:Boolean,
+            required: false,
+            unique: false
+        },
+        score:{
+            type:Number,
             required: false,
             unique: false
         }

@@ -178,8 +178,10 @@ const MapComponent = () => {
           <div className="font-black text-gray-300">-</div>
         </button>
       </div>
+
     </div>
   );
 };
+
 
 export default MapComponent;
