@@ -182,7 +182,6 @@ function getAveragePrecipitation(startDate, endDate, latitude, longitude) {
 export async function getEnvData(startDate, endDate, latitude, longitude) {
     const promises = [
         getAverageWindSpeed(startDate, endDate, latitude, longitude),
-        getAverageWindGust(startDate, endDate, latitude, longitude),
         getAverageTemp(startDate, endDate, latitude, longitude),
         getAverageHumidity(startDate, endDate, latitude, longitude),
         getAveragePrecipitation(startDate, endDate, latitude, longitude),
@@ -193,7 +192,6 @@ export async function getEnvData(startDate, endDate, latitude, longitude) {
 
     const score = {
         avgWS, // In km/h
-        avgWG, //  In km/h
         avgTemp, // In C
         avgHumidity, // In % According to Doc.
         avgPrecipitation,  // In mm
