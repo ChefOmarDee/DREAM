@@ -1,126 +1,187 @@
-"use client";
+"use client"
+import React, { useRef, useState } from "react";
+import Map, { Source, Layer } from "react-map-gl";
+import axios from 'axios';
 
-import React, { useRef, useState } from 'react';
-import Map, { Source, Layer } from 'react-map-gl';
-
-const MAPBOX_TOKEN = "pk.eyJ1IjoiYnJvcDEiLCJhIjoiY20xd2YxOWcxMG04NjJsb3JwdjV6a3E0OCJ9.D_iqH_nw8cEFZMicjWPVog"; // Use your Mapbox token here
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
 
 const MapComponent = () => {
   const mapRef = useRef();
-  const [zipCode, setZipCode] = useState('');
+  const [countyName, setCountyName] = useState("");
+  const [zipcodeData, setZipcodeData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Coordinates for a larger square around Washington, DC
-  const squareCoordinates = [
-    [-77.0369, 38.9072], // Point 1 (bottom-left, DC coordinates)
-    [-77.0369, 38.9272], // Point 2 (top-left)
-    [-77.0169, 38.9272], // Point 3 (top-right)
-    [-77.0169, 38.9072], // Point 4 (bottom-right)
-    [-77.0369, 38.9072], // Closing the loop (back to Point 1)
-  ];
+  const fetchZipcodeData = async () => {
+    if (!countyName.trim()) {
+      setError("Please enter a county name");
+      return;
+    }
 
-  const squareGeoJSON = {
-    type: 'Feature',
-    geometry: {
-      type: 'Polygon',
-      coordinates: [squareCoordinates],
-    },
-  };
+    setLoading(true);
+    setError("");
 
-  // Function to handle zoom in
-  const handleZoomIn = () => {
-    mapRef.current.zoomIn();
-  };
-
-  // Function to handle zoom out
-  const handleZoomOut = () => {
-    mapRef.current.zoomOut();
-  };
-
-  // Function to handle zip code submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Fetch the coordinates using the Mapbox Geocoding API
-    const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${zipCode}.json?access_token=${MAPBOX_TOKEN}`
-    );
-    const data = await response.json();
-
-    if (data.features && data.features.length > 0) {
-      const [longitude, latitude] = data.features[0].center;
-
-      // Fly the map to the new location based on the zip code
-      mapRef.current.flyTo({
-        center: [longitude, latitude],
-        zoom: 12,
-        essential: true, // This ensures the map animation is smooth
-      });
-    } else {
-      alert('Zip code not found. Please try again.');
+    try {
+      const response = await axios.post("/api/getZipcodeData", { countyname: countyName.trim() });
+      
+      if (response.data && Array.isArray(response.data)) {
+        setZipcodeData(response.data);
+        
+        // If we have data, zoom to the first zipcode's coordinates
+        if (response.data.length > 0 && response.data[0].lat && response.data[0].long) {
+          mapRef.current.flyTo({
+            center: [response.data[0].long, response.data[0].lat],
+            zoom: 10,
+            essential: true,
+          });
+        }
+      }
+    } catch (error) {
+      setError(error.response?.data?.error || "Error fetching data");
+      console.error("Error fetching zipcode data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleReset = () => {
+    setZipcodeData([]);
+    setCountyName("");
+    setError("");
+    mapRef.current.flyTo({
+      center: [-98.5795, 39.8283],
+      zoom: 3,
+      essential: true,
+    });
+  };
+
+  const getColor = (lucidscore) => {
+    if (lucidscore === undefined || lucidscore === null) return 'rgb(255,255,0)';
+    const score = Math.max(0, Math.min(1, lucidscore));
+    const r = Math.floor(255 * (1 - score));
+    const g = Math.floor(255 * score);
+    const b = 0;
+    return `rgb(${r},${g},${b})`;
+  };
+
+  const createGeoJsonData = () => {
+    if (!zipcodeData || zipcodeData.length === 0) return null;
+
+    return {
+      type: "FeatureCollection",
+      features: zipcodeData
+        .filter(zipcode => zipcode && zipcode.geojson)
+        .map((zipcode) => ({
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [zipcode.geojson],
+          },
+          properties: {
+            color: getColor(zipcode.lucidscore),
+            zipcode: zipcode.zipcode,
+            score: zipcode.lucidscore
+          },
+        })),
+    };
+  };
+
+  const zipcodeLayer = {
+    id: "zipcode-layer",
+    type: "fill",
+    paint: {
+      "fill-color": ["get", "color"],
+      "fill-opacity": 0.7,
+    },
+  };
+
+  const zipcodeOutlineLayer = {
+    id: "zipcode-outline",
+    type: "line",
+    paint: {
+      "line-color": "#000",
+      "line-width": 1,
+    },
+  };
+
+  const geoJsonData = createGeoJsonData();
+
   return (
     <div className="relative w-full h-screen">
-      {/* The Map */}
       <Map
         ref={mapRef}
         initialViewState={{
-          latitude: 38.9072, // Washington, DC
-          longitude: -77.0369, 
-          zoom: 13,  // Zoom level set for better visibility
+          latitude: 39.8283,
+          longitude: -98.5795,
+          zoom: 3,
         }}
-        className="absolute inset-0 w-full h-full"
-        mapStyle="mapbox://styles/mapbox/streets-v11"
+        style={{ width: "100%", height: "100%" }}
+        mapStyle="mapbox://styles/mapbox/light-v10"
         mapboxAccessToken={MAPBOX_TOKEN}
       >
-        {/* Add the polygon for the square */}
-        <Source id="square" type="geojson" data={squareGeoJSON}>
-          <Layer
-            id="square-layer"
-            type="fill"
-            paint={{
-              'fill-color': 'red',  // Fill the square with red color
-              'fill-opacity': 0.5,  // Set opacity
-            }}
-          />
-        </Source>
+        {geoJsonData && (
+          <Source id="zipcode-data" type="geojson" data={geoJsonData}>
+            <Layer {...zipcodeLayer} />
+            <Layer {...zipcodeOutlineLayer} />
+          </Source>
+        )}
       </Map>
-      
-      {/* Zoom Controls */}
-      <div className="absolute w-10 top-6 left-4 flex flex-col space-y-2">
-        <button 
-          onClick={handleZoomIn} 
+
+      <div className="absolute top-4 left-4 z-10 bg-white p-4 rounded shadow-md space-y-2">
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={countyName}
+            onChange={(e) => setCountyName(e.target.value)}
+            placeholder="Enter county name"
+            className="w-full p-2 border border-gray-300 rounded"
+          />
+          <button
+            onClick={fetchZipcodeData}
+            disabled={loading}
+            className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+          >
+            {loading ? "Loading..." : "Search"}
+          </button>
+          <button
+            onClick={handleReset}
+            className="w-full p-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Reset Map
+          </button>
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {zipcodeData.length > 0 && (
+          <div className="text-sm text-gray-600">
+            Found {zipcodeData.length} zipcodes
+          </div>
+        )}
+      </div>
+
+      <div className="absolute w-10 top-20 left-4 flex flex-col space-y-2">
+        <button
+          onClick={() => mapRef.current.zoomIn()}
           className="bg-white p-2 rounded shadow hover:bg-gray-200"
         >
           <div className="font-extrabold text-gray-300">+</div>
         </button>
-        <button 
-          onClick={handleZoomOut} 
+        <button
+          onClick={() => mapRef.current.zoomOut()}
           className="bg-white p-2 rounded shadow hover:bg-gray-200"
         >
           <div className="font-black text-gray-300">-</div>
         </button>
       </div>
 
-      {/* Zip Code Input Popup */}
-      <div className="absolute bottom-4 right-4 p-4 bg-white rounded shadow-md z-10">
-        <form onSubmit={handleSubmit} className="flex items-center space-x-2">
-          <input
-            type="text"
-            placeholder="Enter Zip Code"
-            value={zipCode}
-            onChange={(e) => setZipCode(e.target.value)}
-            className="border border-gray-300 p-2 rounded w-40"
-          />
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Enter
-          </button>
-        </form>
-      </div>
     </div>
   );
 };
 
-export default MapComponent;
 
+export default MapComponent;
