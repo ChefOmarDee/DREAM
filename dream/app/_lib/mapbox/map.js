@@ -26,7 +26,7 @@ const MapComponent = () => {
       
       if (response.data && Array.isArray(response.data)) {
         setZipcodeData(response.data);
-        
+        console.log(response.data[0])
         // If we have data, zoom to the first zipcode's coordinates
         if (response.data.length > 0 && response.data[0].lat && response.data[0].long) {
           mapRef.current.flyTo({
@@ -56,12 +56,27 @@ const MapComponent = () => {
   };
 
   const getColor = (lucidscore) => {
-    if (lucidscore === undefined || lucidscore === null) return 'rgb(255,255,0)';
+    if (lucidscore === undefined || lucidscore === null) return 'rgb(255,255,255)'; // White for undefined
+    if (lucidscore === 0) return 'rgb(255,0,0)'; // Red for 0
+  
     const score = Math.max(0, Math.min(1, lucidscore));
-    const r = Math.floor(255 * (1 - score));
-    const g = Math.floor(255 * score);
-    const b = 0;
-    return `rgb(${r},${g},${b})`;
+  
+    if (score < 0.2) {
+      // Red to orange-red
+      return `rgb(255,${Math.floor(score * 5 * 255)},0)`;
+    } else if (score < 0.4) {
+      // Orange-red to yellow
+      return `rgb(255,${Math.floor(128 + score * 2.5 * 127)},0)`;
+    } else if (score < 0.6) {
+      // Yellow to light green
+      return `rgb(${Math.floor(255 - (score - 0.4) * 5 * 255)},255,0)`;
+    } else if (score < 0.8) {
+      // Light green to green
+      return `rgb(0,255,${Math.floor((0.8 - score) * 5 * 255)})`;
+    } else {
+      // Green to dark green
+      return `rgb(0,${Math.floor(255 - (score - 0.8) * 5 * 255)},0)`;
+    }
   };
 
   const createGeoJsonData = () => {
@@ -78,9 +93,9 @@ const MapComponent = () => {
             coordinates: [zipcode.geojson],
           },
           properties: {
-            color: getColor(zipcode.lucidscore),
+            color: getColor(zipcode.score),
             zipcode: zipcode.zipcode,
-            score: zipcode.lucidscore
+            score: zipcode.score
           },
         })),
     };
