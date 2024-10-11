@@ -15,7 +15,7 @@ export async function POST(req) {
     // const county = await Counties.findOne({ countyname });
     const zipcodes = await ZipCode.find(
         { state: countyname },
-        'zipcode popdensity lat long geojson lucidscore'
+        'zipcode popdensity lat long geojson score'
       );
     if (!zipcodes) {
       return NextResponse.json(
