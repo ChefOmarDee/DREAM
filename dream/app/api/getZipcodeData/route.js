@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import mongoose from 'mongoose';
-import { Counties } from "@/app/_lib/mongodb/models/counties";
 import { ZipCode } from "@/app/_lib/mongodb/models/zipcodes";
 import { ConnectToDatabase } from "@/app/_lib/mongodb/connection/db";
 
