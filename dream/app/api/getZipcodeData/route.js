@@ -8,29 +8,19 @@ export async function POST(req) {
 
     // Ensure database connection
     await ConnectToDatabase();
-    
-    // First, find the county to get its zipcodes
-    // const county = await Counties.findOne({ countyname });
-    const zipcodes = await ZipCode.find(
-        { state: countyname },
-        'zipcode popdensity lat long geojson score'
-      );
-    if (!zipcodes) {
-      return NextResponse.json(
-        { error: "County not found" },
-        { status: 404 }
-      );
-    }
 
-    // Then query for all zipcode documents that match the county's zipcodes
-   
+    const zipcodes = await ZipCode.find(
+      { state: countyname },
+      'zipcode popdensity lat long geojson score'
+    );
+
+    if (!zipcodes || zipcodes.length === 0) {
+      return NextResponse.json({ error: "No zipcodes found for the given state" }, { status: 404 });
+    }
 
     return NextResponse.json(zipcodes);
   } catch (error) {
     console.error("Error fetching zipcode data:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch zipcode data" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch zipcode data" }, { status: 500 });
   }
 }

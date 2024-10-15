@@ -80,16 +80,18 @@ const MapComponent = () => {
       setError("Please select a state");
       return;
     }
-
+  
     setLoading(true);
     setError("");
-
+    setZipcodeData([]);
+  
     try {
       const response = await axios.post("/api/getZipcodeData", { countyname: selectedState });
       
       if (response.data && Array.isArray(response.data)) {
         setZipcodeData(response.data);
-        console.log(response.data[0])
+        console.log(`Received ${response.data.length} zipcodes for ${selectedState}`);
+        
         // If we have data, zoom to the first zipcode's coordinates
         if (response.data.length > 0 && response.data[0].lat && response.data[0].long) {
           mapRef.current.flyTo({
@@ -97,11 +99,29 @@ const MapComponent = () => {
             zoom: 7,
             essential: true,
           });
+        } else {
+          console.warn("No valid coordinates found in the first zipcode");
         }
+      } else {
+        throw new Error("Invalid data received from server");
       }
     } catch (error) {
-      setError(error.response?.data?.error || "Error fetching data");
-      console.error("Error fetching zipcode data:", error);
+      let errorMessage = "Error fetching data";
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        errorMessage = error.response.data?.error || `Server error: ${error.response.status}`;
+        console.error("Server responded with error:", error.response.data);
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = "No response received from server";
+        console.error("No response received:", error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        errorMessage = error.message;
+        console.error("Error setting up request:", error.message);
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -178,6 +198,7 @@ const MapComponent = () => {
   };
 
   const geoJsonData = createGeoJsonData();
+
   return (
     <div className="relative w-full h-screen">
       <Map
@@ -199,7 +220,7 @@ const MapComponent = () => {
         )}
       </Map>
 
-      <div className="absolute top-4 left-4 right-4 z-10 bg-white p-4 rounded shadow-md space-y-2 max-w-xs mx-auto md:mx-0">
+      <div className="absolute top-4 left-4 right-4 z-10 bg-white p-4 rounded shadow-md space-y-2 md:w-64 md:right-auto">
         <div className="space-y-2">
           <select
             value={selectedState}
@@ -240,7 +261,7 @@ const MapComponent = () => {
         )}
       </div>
 
-      <div className="absolute bottom-4 left-4 right-4 z-10 bg-white p-4 rounded shadow-md max-w-xs mx-auto md:mx-0 md:left-4 md:right-auto">
+      <div className="absolute bottom-4 left-4 right-4 z-10 bg-white p-4 rounded shadow-md md:w-64 md:left-4 md:right-auto">
         <h3 className="font-bold mb-2">Legend</h3>
         <div className="grid grid-cols-2 gap-2">
           {colorLegend.map(({ color, label }) => (
@@ -252,7 +273,7 @@ const MapComponent = () => {
         </div>
       </div>
 
-      <div className="absolute top-auto bottom-4 right-4 flex flex-col space-y-2">
+      <div className="absolute top-20 left-4 flex flex-col space-y-2 md:top-auto md:bottom-4 md:left-auto md:right-4">
         <button
           onClick={() => mapRef.current.zoomIn()}
           className="bg-white w-8 h-8 rounded shadow hover:bg-gray-200 transition duration-200 flex items-center justify-center"
@@ -266,6 +287,7 @@ const MapComponent = () => {
           <span className="text-2xl font-bold text-gray-600">-</span>
         </button>
       </div>
+
     </div>
   );
 };
