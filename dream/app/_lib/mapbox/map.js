@@ -178,7 +178,6 @@ const MapComponent = () => {
   };
 
   const geoJsonData = createGeoJsonData();
-
   return (
     <div className="relative w-full h-screen">
       <Map
@@ -200,7 +199,7 @@ const MapComponent = () => {
         )}
       </Map>
 
-      <div className="absolute top-4 left-4 right-4 z-10 bg-white p-4 rounded shadow-md space-y-2 md:w-64 md:right-auto">
+      <div className="absolute top-4 left-4 right-4 z-10 bg-white p-4 rounded shadow-md space-y-2 max-w-xs mx-auto md:mx-0">
         <div className="space-y-2">
           <select
             value={selectedState}
@@ -241,7 +240,7 @@ const MapComponent = () => {
         )}
       </div>
 
-      <div className="absolute bottom-4 left-4 right-4 z-10 bg-white p-4 rounded shadow-md md:w-64 md:left-4 md:right-auto">
+      <div className="absolute bottom-4 left-4 right-4 z-10 bg-white p-4 rounded shadow-md max-w-xs mx-auto md:mx-0 md:left-4 md:right-auto">
         <h3 className="font-bold mb-2">Legend</h3>
         <div className="grid grid-cols-2 gap-2">
           {colorLegend.map(({ color, label }) => (
@@ -253,7 +252,7 @@ const MapComponent = () => {
         </div>
       </div>
 
-      <div className="absolute top-20 left-4 flex flex-col space-y-2 md:top-auto md:bottom-4 md:left-auto md:right-4">
+      <div className="absolute top-auto bottom-4 right-4 flex flex-col space-y-2">
         <button
           onClick={() => mapRef.current.zoomIn()}
           className="bg-white w-8 h-8 rounded shadow hover:bg-gray-200 transition duration-200 flex items-center justify-center"
@@ -267,7 +266,6 @@ const MapComponent = () => {
           <span className="text-2xl font-bold text-gray-600">-</span>
         </button>
       </div>
-
     </div>
   );
 };
