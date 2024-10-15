@@ -96,7 +96,7 @@ const MapComponent = () => {
         if (response.data.length > 0 && response.data[0].lat && response.data[0].long) {
           mapRef.current.flyTo({
             center: [response.data[0].long, response.data[0].lat],
-            zoom: 7,
+            zoom: 6,
             essential: true,
           });
         } else {
