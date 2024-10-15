@@ -16,7 +16,7 @@ client.on('error', (err) => {
   console.error('Redis error:', err);
 });
 
-// Connect to Redis cache
+// Connect to Redis's cache
 await client.connect();
 
 export async function POST(req) {
