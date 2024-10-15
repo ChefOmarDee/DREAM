@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZipCode } from "@/app/_lib/mongodb/models/zipcodes";
 import { ConnectToDatabase } from "@/app/_lib/mongodb/connection/db";
 import { createClient } from "redis";
+import mongoose from "mongoose";
 
 // Create a Redis client
 const client = createClient({
@@ -15,14 +16,15 @@ client.on('error', (err) => {
   console.error('Redis error:', err);
 });
 
-await client.connect(); // Connect to Redis
+// Connect to Redis
+await client.connect();
 
 export async function POST(req) {
   try {
     const { countyname } = await req.json();
     
     // Create a unique cache key based on the state (countyname)
-    const cacheKey = countyname;
+    const cacheKey = `state:${countyname}`;
     
     // Check if data is cached in Redis
     const cachedZipcodes = await client.get(cacheKey);
@@ -32,10 +34,15 @@ export async function POST(req) {
       // If cache hit, retrieve documents using cached zipcodes
       console.log("cache hit");
       const zipcodesArray = JSON.parse(cachedZipcodes);
+      console.log(zipcodesArray);
+      
+      // Ensure database connection before querying
+      await ConnectToDatabase();
+      
       zipcodes = await ZipCode.find(
         { zipcode: { $in: zipcodesArray } },
         'zipcode popdensity lat long geojson score'
-      );
+      ).lean();
     } else {
       console.log("cache miss");
       // Ensure database connection
@@ -45,7 +52,7 @@ export async function POST(req) {
       zipcodes = await ZipCode.find(
         { state: countyname },
         'zipcode popdensity lat long geojson score'
-      );
+      ).lean();
 
       if (!zipcodes || zipcodes.length === 0) {
         return NextResponse.json({ error: "No zipcodes found for the given state" }, { status: 404 });
@@ -61,5 +68,10 @@ export async function POST(req) {
   } catch (error) {
     console.error("Error fetching zipcode data:", error);
     return NextResponse.json({ error: "Failed to fetch zipcode data" }, { status: 500 });
+  } finally {
+    // Close the MongoDB connection
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.close();
+    }
   }
 }
