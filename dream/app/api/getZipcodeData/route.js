@@ -4,7 +4,7 @@ import { ConnectToDatabase } from "@/app/_lib/mongodb/connection/db";
 import { createClient } from "redis";
 import mongoose from "mongoose";
 
-// Create a Redis client
+// Create a Redis's client
 const client = createClient({
     password: '99JsfvjyiKlbyR0QES7DtomuEYWsLpnR',
     socket: {
